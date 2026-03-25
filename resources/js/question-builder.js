@@ -11,22 +11,26 @@ const typeLabels = {
 };
 
 let questionIndex = 0;
+let draggedElement = null;
 
 function addQuestion(type, data = {}) {
     const container = document.getElementById('questions-container');
     const idx = questionIndex++;
 
     const card = document.createElement('div');
-    card.className = 'card mb-4 relative';
+    card.className = 'card mb-4 relative draggable-question';
     card.id = 'question-card-' + idx;
     card.dataset.idx = idx;
+    card.draggable = true;
 
     let html = `
         <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-medium text-primary-500 bg-primary-50 px-2 py-1 rounded">${typeLabels[type]}</span>
+            <div class="flex items-center gap-3">
+                <span class="drag-handle text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing text-xl" title="Drag to reorder">⋮⋮</span>
+                <span class="question-number font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded min-w-fit">Q1</span>
+                <span class="text-xs font-medium text-primary-500 bg-primary-50 px-2 py-1 rounded">${typeLabels[type]}</span>
+            </div>
             <div class="flex items-center gap-1">
-                <button type="button" onclick="moveQuestion(${idx}, -1)" class="text-gray-400 hover:text-gray-600 p-1 text-xs" title="Move up">↑</button>
-                <button type="button" onclick="moveQuestion(${idx}, 1)" class="text-gray-400 hover:text-gray-600 p-1 text-xs" title="Move down">↓</button>
                 <button type="button" onclick="removeQuestion(${idx})" class="text-red-400 hover:text-red-600 p-1 text-xs ml-2" title="Remove">✕</button>
             </div>
         </div>
@@ -84,6 +88,11 @@ function addQuestion(type, data = {}) {
 
     card.innerHTML = html;
     container.appendChild(card);
+    
+    // Attach drag events directly to the card
+    card.addEventListener('dragstart', handleDragStart);
+    card.addEventListener('dragend', handleDragEnd);
+    
     reindexQuestions();
 }
 
@@ -122,27 +131,73 @@ function removeQuestion(idx) {
     reindexQuestions();
 }
 
-function moveQuestion(idx, direction) {
-    const container = document.getElementById('questions-container');
-    const card = document.getElementById('question-card-' + idx);
-    if (!card) return;
-
-    const cards = Array.from(container.children);
-    const currentIndex = cards.indexOf(card);
-    const targetIndex = currentIndex + direction;
-
-    if (targetIndex < 0 || targetIndex >= cards.length) return;
-
-    if (direction === -1) {
-        container.insertBefore(card, cards[targetIndex]);
-    } else {
-        container.insertBefore(card, cards[targetIndex].nextSibling);
-    }
-    reindexQuestions();
-}
-
 function reindexQuestions() {
-    // Re-number the questions visually (not the form names — those use original index as key)
+    // Update question numbers and reorder form fields based on DOM order
+    const container = document.getElementById('questions-container');
+    const cards = Array.from(container.children);
+
+    cards.forEach((card, position) => {
+        const questionNum = position + 1;
+        
+        // Update visual number
+        const numberSpan = card.querySelector('.question-number');
+        if (numberSpan) {
+            numberSpan.textContent = `Q${questionNum}`;
+        }
+
+        // Update ALL form field names to use the new position index
+        const allInputs = card.querySelectorAll('input, textarea, select');
+        allInputs.forEach(input => {
+            const oldName = input.getAttribute('name');
+            if (oldName && oldName.includes('questions[')) {
+                // Replace all questions[OLD_IDX] with questions[NEW_IDX]
+                const newName = oldName.replace(/questions\[\d+\]/, `questions[${position}]`);
+                input.setAttribute('name', newName);
+                
+                // Also update onclick handlers for option removal
+                if (input.nextElementSibling && input.nextElementSibling.onclick) {
+                    const onclickText = input.nextElementSibling.getAttribute('onclick');
+                    if (onclickText && onclickText.includes('removeOption')) {
+                        // Update the removeOption call with new index
+                        const newOnclick = onclickText.replace(/removeOption\(\d+/, `removeOption(${position}`);
+                        input.nextElementSibling.setAttribute('onclick', newOnclick);
+                    }
+                }
+            }
+        });
+
+        // Update onclick handlers for addOption button
+        const addOptionBtn = card.querySelector('button[onclick*="addOption"]');
+        if (addOptionBtn) {
+            const newOnclick = `addOption(${position})`;
+            addOptionBtn.setAttribute('onclick', newOnclick);
+        }
+
+        // Update onclick handler for removeQuestion button
+        const removeBtn = card.querySelector('button[onclick*="removeQuestion"]');
+        if (removeBtn) {
+            const newOnclick = `removeQuestion(${position})`;
+            removeBtn.setAttribute('onclick', newOnclick);
+        }
+
+        // Update the options container ID
+        const oldContainerId = `options-container-${card.dataset.idx}`;
+        const newContainerId = `options-container-${position}`;
+        const optionsContainer = card.querySelector(`#${oldContainerId}`);
+        if (optionsContainer) {
+            optionsContainer.id = newContainerId;
+        }
+
+        // Update option remove buttons' onclick handlers
+        const optionRemoveBtns = card.querySelectorAll('button[onclick*="removeOption"]');
+        optionRemoveBtns.forEach(btn => {
+            const oldOnclick = btn.getAttribute('onclick');
+            if (oldOnclick) {
+                const newOnclick = oldOnclick.replace(/removeOption\(\d+/, `removeOption(${position}`);
+                btn.setAttribute('onclick', newOnclick);
+            }
+        });
+    });
 }
 
 function escapeHtml(str) {
@@ -151,6 +206,45 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
+// Bulk Add Questions Functions
+function openBulkAddModal() {
+    document.getElementById('bulk-add-modal').style.display = 'flex';
+}
+
+function closeBulkAddModal() {
+    document.getElementById('bulk-add-modal').style.display = 'none';
+}
+
+function addMultipleQuestions() {
+    const questionType = document.getElementById('bulk-question-type').value;
+    const questionCount = parseInt(document.getElementById('bulk-question-count').value);
+
+    // Validate input
+    if (isNaN(questionCount) || questionCount < 1 || questionCount > 50) {
+        alert('Please enter a number between 1 and 50');
+        return;
+    }
+
+    // Add the specified number of questions
+    for (let i = 0; i < questionCount; i++) {
+        addQuestion(questionType);
+    }
+
+    closeBulkAddModal();
+}
+
+// Close modal when clicking outside of it
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('bulk-add-modal');
+    if (modal) {
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                closeBulkAddModal();
+            }
+        });
+    }
+});
+
 // Load existing questions on page load
 document.addEventListener('DOMContentLoaded', function () {
     if (window.existingQuestions && window.existingQuestions.length > 0) {
@@ -158,11 +252,96 @@ document.addEventListener('DOMContentLoaded', function () {
             addQuestion(q.type, q);
         });
     }
+    
+    // Initialize drag-and-drop event listeners on container
+    initializeDragAndDrop();
 });
+
+// Drag and Drop Implementation
+function initializeDragAndDrop() {
+    const container = document.getElementById('questions-container');
+    if (!container) return;
+
+    container.addEventListener('dragover', handleDragOver, false);
+    container.addEventListener('drop', handleDrop, false);
+    container.addEventListener('dragenter', handleDragEnter, false);
+}
+
+function handleDragStart(e) {
+    const card = e.target.closest('.draggable-question');
+    if (card) {
+        draggedElement = card;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+        setTimeout(() => {
+            card.style.opacity = '0.6';
+            card.style.backgroundColor = '#f3f4f6';
+        }, 0);
+    }
+}
+
+function handleDragEnter(e) {
+    e.preventDefault();
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+
+    if (!draggedElement) return;
+
+    const container = document.getElementById('questions-container');
+    const cards = Array.from(container.querySelectorAll('.draggable-question'));
+    const afterElement = getDragAfterElement(container, e.clientY);
+
+    if (afterElement == null) {
+        container.appendChild(draggedElement);
+    } else {
+        container.insertBefore(draggedElement, afterElement);
+    }
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (draggedElement) {
+        draggedElement.style.opacity = '1';
+        draggedElement.style.backgroundColor = '';
+        reindexQuestions();
+    }
+}
+
+function handleDragEnd(e) {
+    if (draggedElement) {
+        draggedElement.style.opacity = '1';
+        draggedElement.style.backgroundColor = '';
+        draggedElement = null;
+    }
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.draggable-question:not([style*="opacity: 0.6"])')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
 
 // Make functions globally available
 window.addQuestion = addQuestion;
 window.addOption = addOption;
 window.removeOption = removeOption;
 window.removeQuestion = removeQuestion;
-window.moveQuestion = moveQuestion;
+window.openBulkAddModal = openBulkAddModal;
+window.closeBulkAddModal = closeBulkAddModal;
+window.addMultipleQuestions = addMultipleQuestions;
+window.initializeDragAndDrop = initializeDragAndDrop;

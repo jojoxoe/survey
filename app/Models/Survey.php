@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
@@ -33,6 +33,13 @@ class Survey extends Model
                 $survey->slug = self::generateUniqueSlug($survey->title);
             }
         });
+
+        static::updating(function (Survey $survey) {
+            // Regenerate slug if title has changed
+            if ($survey->isDirty('title')) {
+                $survey->slug = self::generateUniqueSlugForUpdate($survey->title, $survey->id);
+            }
+        });
     }
 
     public static function generateUniqueCode(): string
@@ -51,7 +58,20 @@ class Survey extends Model
         $count = 1;
 
         while (self::where('slug', $slug)->exists()) {
-            $slug = $original . '-' . $count++;
+            $slug = $original.'-'.$count++;
+        }
+
+        return $slug;
+    }
+
+    public static function generateUniqueSlugForUpdate(string $title, int $surveyId): string
+    {
+        $slug = Str::slug($title);
+        $original = $slug;
+        $count = 1;
+
+        while (self::where('slug', $slug)->where('id', '!=', $surveyId)->exists()) {
+            $slug = $original.'-'.$count++;
         }
 
         return $slug;
@@ -89,11 +109,11 @@ class Survey extends Model
 
     public function isAccessible(): bool
     {
-        return $this->isPublished() && !$this->isExpired();
+        return $this->isPublished() && ! $this->isExpired();
     }
 
     public function getShareUrlAttribute(): string
     {
-        return url('/s/' . $this->slug);
+        return url('/s/'.$this->slug);
     }
 }

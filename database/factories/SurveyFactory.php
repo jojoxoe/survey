@@ -19,8 +19,8 @@ class SurveyFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'title' => fake()->sentence(3),
-            'description' => fake()->optional()->sentence(),
+            'title' => \fake()->sentence(3),
+            'description' => \fake()->optional()->sentence(),
             'status' => 'draft',
             'expires_at' => null,
         ];

@@ -45,6 +45,35 @@
                     <button type="button" onclick="addQuestion('ranking')" class="btn-secondary btn-sm">Ranking</button>
                     <button type="button" onclick="addQuestion('rating')" class="btn-secondary btn-sm">Rating</button>
                     <button type="button" onclick="addQuestion('open_ended')" class="btn-secondary btn-sm">Open Ended</button>
+                    <button type="button" onclick="openBulkAddModal()" class="btn-secondary btn-sm" style="background-color: #10b981;">Add Multiple</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Add Questions Modal -->
+        <div id="bulk-add-modal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Add Multiple Questions</h3>
+                
+                <div class="mb-4">
+                    <label for="bulk-question-type" class="block text-sm font-medium text-gray-700 mb-2">Question Type</label>
+                    <select id="bulk-question-type" class="input-field w-full">
+                        <option value="true_false">True/False</option>
+                        <option value="multiple_choice">Multiple Choice</option>
+                        <option value="ranking">Ranking</option>
+                        <option value="rating">Rating</option>
+                        <option value="open_ended">Open Ended</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label for="bulk-question-count" class="block text-sm font-medium text-gray-700 mb-2">How many questions?</label>
+                    <input type="number" id="bulk-question-count" min="1" max="50" value="5" class="input-field w-full" placeholder="Enter number of questions">
+                </div>
+
+                <div class="flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeBulkAddModal()" class="text-sm text-gray-500 hover:text-gray-700 transition">Cancel</button>
+                    <button type="button" onclick="addMultipleQuestions()" class="btn-primary">Add Questions</button>
                 </div>
             </div>
         </div>
