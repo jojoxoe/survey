@@ -2,12 +2,19 @@
 
 namespace Tests\Feature;
 
+use Database\Seeders\PsgcSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PsgcApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(PsgcSeeder::class);
+    }
 
     public function test_regions_endpoint_returns_array(): void
     {
