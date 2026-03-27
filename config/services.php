@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'psgc' => [
+        'base_url' => env('PSGC_BASE_URL', 'https://psgc.cloud/api/v2'),
+        'timeout' => (int) env('PSGC_TIMEOUT', 10),
+        'retry_times' => (int) env('PSGC_RETRY_TIMES', 2),
+        'retry_sleep_ms' => (int) env('PSGC_RETRY_SLEEP_MS', 250),
+        'cache_ttl_minutes' => (int) env('PSGC_CACHE_TTL_MINUTES', 1440),
+    ],
+
 ];

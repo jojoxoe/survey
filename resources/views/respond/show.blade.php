@@ -18,7 +18,7 @@
         @csrf
 
         {{-- Respondent Demographics --}}
-        <div class="card mb-6" x-data="locationPicker()">
+        <div class="card mb-6">
             <h3 class="font-semibold text-gray-800 mb-4">About You</h3>
 
             {{-- Name (optional) --}}
@@ -53,60 +53,92 @@
                 @enderror
             </div>
 
-            {{-- Location (PSGC cascading) --}}
-            <div class="mb-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Location <span class="text-red-400">*</span>
-                </label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="location-selector">
+                <div>
+                    <label for="region_code" class="block text-sm font-medium text-gray-700 mb-1">
+                        Region <span class="text-red-400">*</span>
+                    </label>
+                    <select
+                        id="region_code"
+                        name="region_code"
+                        class="input-field w-full"
+                        data-old="{{ old('region_code') }}"
+                    >
+                        <option value="">Select a region</option>
+                    </select>
+                    @error('region_code')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="province_code" class="block text-sm font-medium text-gray-700 mb-1">
+                        Province <span class="text-red-400">*</span>
+                    </label>
+                    <select
+                        id="province_code"
+                        name="province_code"
+                        class="input-field w-full"
+                        data-old="{{ old('province_code') }}"
+                        disabled
+                    >
+                        <option value="">Select a province</option>
+                    </select>
+                    @error('province_code')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="city_municipality_code" class="block text-sm font-medium text-gray-700 mb-1">
+                        City / Municipality <span class="text-red-400">*</span>
+                    </label>
+                    <select
+                        id="city_municipality_code"
+                        name="city_municipality_code"
+                        class="input-field w-full"
+                        data-old="{{ old('city_municipality_code') }}"
+                        disabled
+                    >
+                        <option value="">Select a city / municipality</option>
+                    </select>
+                    @error('city_municipality_code')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="barangay_code" class="block text-sm font-medium text-gray-700 mb-1">
+                        Barangay <span class="text-red-400">*</span>
+                    </label>
+                    <select
+                        id="barangay_code"
+                        name="barangay_code"
+                        class="input-field w-full"
+                        data-old="{{ old('barangay_code') }}"
+                        disabled
+                    >
+                        <option value="">Select a barangay</option>
+                    </select>
+                    @error('barangay_code')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {{-- Region --}}
-                <div>
-                    <select name="respondent_region" x-model="region" @change="onRegionChange()"
-                            class="input-field w-full text-sm"
-                            x-html="'<option value=\'\'>Select Region</option>' + regions.map(r => '<option value=\''+r.name+'\'>'+r.name+'</option>').join('')">
-                    </select>
-                    @error('respondent_region')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+            <input type="hidden" id="region_name" name="region_name" value="{{ old('region_name') }}">
+            <input type="hidden" id="province_name" name="province_name" value="{{ old('province_name') }}">
+            <input type="hidden" id="city_municipality_name" name="city_municipality_name" value="{{ old('city_municipality_name') }}">
+            <input type="hidden" id="barangay_name" name="barangay_name" value="{{ old('barangay_name') }}">
 
-                {{-- Province --}}
-                <div>
-                    <select name="respondent_province" x-model="province" @change="onProvinceChange()"
-                            class="input-field w-full text-sm" :disabled="!provinces.length"
-                            x-html="'<option value=\'\'>Select Province</option>' + provinces.map(p => '<option value=\''+p.name+'\'>'+p.name+'</option>').join('')">
-                    </select>
-                    @error('respondent_province')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+            @if($errors->has('region_name') || $errors->has('province_name') || $errors->has('city_municipality_name') || $errors->has('barangay_name'))
+                <div class="mt-3 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
+                    {{ $errors->first('region_name') ?? $errors->first('province_name') ?? $errors->first('city_municipality_name') ?? $errors->first('barangay_name') }}
                 </div>
+            @endif
 
-                {{-- City / Municipality --}}
-                <div>
-                    <select name="respondent_city" x-model="city" @change="onCityChange()"
-                            class="input-field w-full text-sm" :disabled="!cities.length"
-                            x-html="'<option value=\'\'>Select City/Municipality</option>' + cities.map(c => '<option value=\''+c.name+'\'>'+c.name+'</option>').join('')">
-                    </select>
-                    @error('respondent_city')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+            <p id="location-feedback" class="mt-2 text-xs text-gray-500"></p>
 
-                {{-- Barangay --}}
-                <div>
-                    <select name="respondent_barangay" x-model="barangay"
-                            class="input-field w-full text-sm" :disabled="!barangays.length"
-                            x-html="'<option value=\'\'>Select Barangay</option>' + barangays.map(b => '<option value=\''+b.name+'\'>'+b.name+'</option>').join('')">
-                    </select>
-                    @error('respondent_barangay')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-
-            <p x-show="loading" class="text-xs text-gray-400 mt-2">Loading locations...</p>
         </div>
 
         @foreach($survey->questions as $question)
@@ -202,101 +234,6 @@
 
     @push('scripts')
     <script>
-        function locationPicker() {
-            return {
-                regions: [],
-                provinces: [],
-                cities: [],
-                barangays: [],
-                region: '{{ old('respondent_region', '') }}',
-                province: '{{ old('respondent_province', '') }}',
-                city: '{{ old('respondent_city', '') }}',
-                barangay: '{{ old('respondent_barangay', '') }}',
-                loading: false,
-                regionMap: {},
-                provinceMap: {},
-                cityMap: {},
-
-                async init() {
-                    this.loading = true;
-                    try {
-                        const res = await fetch('/api/psgc/regions');
-                        const data = await res.json();
-                        this.regions = data;
-                        data.forEach(r => { this.regionMap[r.name] = r.code; });
-
-                        if (this.region) {
-                            await this.loadProvinces();
-                            if (this.province) {
-                                await this.loadCities();
-                                if (this.city) {
-                                    await this.loadBarangays();
-                                }
-                            }
-                        }
-                    } catch (e) { console.error('Failed to load regions', e); }
-                    this.loading = false;
-                },
-
-                async onRegionChange() {
-                    this.provinces = []; this.cities = []; this.barangays = [];
-                    this.province = ''; this.city = ''; this.barangay = '';
-                    if (this.region) await this.loadProvinces();
-                },
-
-                async onProvinceChange() {
-                    this.cities = []; this.barangays = [];
-                    this.city = ''; this.barangay = '';
-                    if (this.province) await this.loadCities();
-                },
-
-                async onCityChange() {
-                    this.barangays = [];
-                    this.barangay = '';
-                    if (this.city) await this.loadBarangays();
-                },
-
-                async loadProvinces() {
-                    this.loading = true;
-                    const code = this.regionMap[this.region];
-                    if (!code) { this.loading = false; return; }
-                    try {
-                        const res = await fetch('/api/psgc/regions/' + code + '/provinces');
-                        const data = await res.json();
-                        this.provinces = data;
-                        this.provinceMap = {};
-                        data.forEach(p => { this.provinceMap[p.name] = p.code; });
-                    } catch (e) { console.error('Failed to load provinces', e); }
-                    this.loading = false;
-                },
-
-                async loadCities() {
-                    this.loading = true;
-                    const code = this.provinceMap[this.province];
-                    if (!code) { this.loading = false; return; }
-                    try {
-                        const res = await fetch('/api/psgc/provinces/' + code + '/cities');
-                        const data = await res.json();
-                        this.cities = data;
-                        this.cityMap = {};
-                        data.forEach(c => { this.cityMap[c.name] = c.code; });
-                    } catch (e) { console.error('Failed to load cities', e); }
-                    this.loading = false;
-                },
-
-                async loadBarangays() {
-                    this.loading = true;
-                    const code = this.cityMap[this.city];
-                    if (!code) { this.loading = false; return; }
-                    try {
-                        const res = await fetch('/api/psgc/cities/' + code + '/barangays');
-                        this.barangays = await res.json();
-                    } catch (e) { console.error('Failed to load barangays', e); }
-                    this.loading = false;
-                },
-            };
-        }
-
         function rankingComponent(questionId, options) {
             return {
                 items: options,
@@ -311,6 +248,255 @@
                 }
             };
         }
+
+        async function initializePsgcLocationSelector() {
+            const regionSelect = document.getElementById('region_code');
+            const provinceSelect = document.getElementById('province_code');
+            const citySelect = document.getElementById('city_municipality_code');
+            const barangaySelect = document.getElementById('barangay_code');
+
+            if (!regionSelect || !provinceSelect || !citySelect || !barangaySelect) {
+                return;
+            }
+
+            const regionNameInput = document.getElementById('region_name');
+            const provinceNameInput = document.getElementById('province_name');
+            const cityNameInput = document.getElementById('city_municipality_name');
+            const barangayNameInput = document.getElementById('barangay_name');
+            const feedback = document.getElementById('location-feedback');
+
+            const endpoints = {
+                regions: @json(route('locations.regions')),
+                provinces: (regionCode) => @json(url('/locations/regions')).concat('/', encodeURIComponent(regionCode), '/provinces'),
+                cities: (provinceCode) => @json(url('/locations/provinces')).concat('/', encodeURIComponent(provinceCode), '/cities-municipalities'),
+                barangays: (cityCode) => @json(url('/locations/cities-municipalities')).concat('/', encodeURIComponent(cityCode), '/barangays'),
+            };
+
+            const oldRegionCode = regionSelect.dataset.old || '';
+            const oldProvinceCode = provinceSelect.dataset.old || '';
+            const oldCityCode = citySelect.dataset.old || '';
+            const oldBarangayCode = barangaySelect.dataset.old || '';
+
+            const resetSelect = (select, placeholder, keepDisabled = true) => {
+                select.innerHTML = '';
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = placeholder;
+                select.appendChild(option);
+                select.value = '';
+                select.disabled = keepDisabled;
+            };
+
+            const setLoadingState = (select, message) => {
+                select.innerHTML = '';
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = message;
+                select.appendChild(option);
+                select.value = '';
+                select.disabled = true;
+            };
+
+            const setFeedback = (message, isError = false) => {
+                feedback.textContent = message;
+                feedback.className = isError
+                    ? 'mt-2 text-xs text-red-600'
+                    : 'mt-2 text-xs text-gray-500';
+            };
+
+            const setHiddenName = (select, hiddenInput) => {
+                const selectedOption = select.options[select.selectedIndex];
+                hiddenInput.value = selectedOption && selectedOption.value ? selectedOption.text : '';
+            };
+
+            const populateSelect = (select, items, placeholder, selectedCode = '') => {
+                resetSelect(select, placeholder, false);
+
+                if (!items.length) {
+                    select.disabled = true;
+                    const option = select.options[0];
+                    option.text = placeholder.replace('Select', 'No available');
+
+                    return false;
+                }
+
+                items.forEach((item) => {
+                    const option = document.createElement('option');
+                    option.value = item.code;
+                    option.textContent = item.name;
+                    select.appendChild(option);
+                });
+
+                if (selectedCode) {
+                    select.value = selectedCode;
+                }
+
+                return true;
+            };
+
+            const fetchLocations = async (url) => {
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                });
+
+                const payload = await response.json();
+                if (!response.ok || payload.success !== true) {
+                    throw new Error(payload.message || 'Unable to load locations.');
+                }
+
+                return Array.isArray(payload.data) ? payload.data : [];
+            };
+
+            const resetDownstreamFromRegion = () => {
+                resetSelect(provinceSelect, 'Select a province');
+                resetSelect(citySelect, 'Select a city / municipality');
+                resetSelect(barangaySelect, 'Select a barangay');
+                provinceNameInput.value = '';
+                cityNameInput.value = '';
+                barangayNameInput.value = '';
+            };
+
+            const resetDownstreamFromProvince = () => {
+                resetSelect(citySelect, 'Select a city / municipality');
+                resetSelect(barangaySelect, 'Select a barangay');
+                cityNameInput.value = '';
+                barangayNameInput.value = '';
+            };
+
+            const resetDownstreamFromCity = () => {
+                resetSelect(barangaySelect, 'Select a barangay');
+                barangayNameInput.value = '';
+            };
+
+            const loadRegions = async (selectedCode = '') => {
+                setLoadingState(regionSelect, 'Loading regions...');
+                const regions = await fetchLocations(endpoints.regions);
+                populateSelect(regionSelect, regions, 'Select a region', selectedCode);
+                setHiddenName(regionSelect, regionNameInput);
+            };
+
+            const loadProvinces = async (regionCode, selectedCode = '') => {
+                if (!regionCode) {
+                    resetDownstreamFromRegion();
+
+                    return;
+                }
+
+                setLoadingState(provinceSelect, 'Loading provinces...');
+                const provinces = await fetchLocations(endpoints.provinces(regionCode));
+                const hasItems = populateSelect(provinceSelect, provinces, 'Select a province', selectedCode);
+                setHiddenName(provinceSelect, provinceNameInput);
+
+                if (!hasItems) {
+                    setFeedback('No provinces found for the selected region. Please choose another region.');
+                }
+            };
+
+            const loadCitiesMunicipalities = async (provinceCode, selectedCode = '') => {
+                if (!provinceCode) {
+                    resetDownstreamFromProvince();
+
+                    return;
+                }
+
+                setLoadingState(citySelect, 'Loading cities / municipalities...');
+                const cities = await fetchLocations(endpoints.cities(provinceCode));
+                const hasItems = populateSelect(citySelect, cities, 'Select a city / municipality', selectedCode);
+                setHiddenName(citySelect, cityNameInput);
+
+                if (!hasItems) {
+                    setFeedback('No cities or municipalities found for the selected province.', true);
+                }
+            };
+
+            const loadBarangays = async (cityCode, selectedCode = '') => {
+                if (!cityCode) {
+                    resetDownstreamFromCity();
+
+                    return;
+                }
+
+                setLoadingState(barangaySelect, 'Loading barangays...');
+                const barangays = await fetchLocations(endpoints.barangays(cityCode));
+                const hasItems = populateSelect(barangaySelect, barangays, 'Select a barangay', selectedCode);
+                setHiddenName(barangaySelect, barangayNameInput);
+
+                if (!hasItems) {
+                    setFeedback('No barangays found for the selected city or municipality.', true);
+                }
+            };
+
+            regionSelect.addEventListener('change', async () => {
+                setHiddenName(regionSelect, regionNameInput);
+                resetDownstreamFromRegion();
+                setFeedback('');
+
+                try {
+                    await loadProvinces(regionSelect.value);
+                } catch (error) {
+                    setFeedback(error.message, true);
+                    resetDownstreamFromRegion();
+                }
+            });
+
+            provinceSelect.addEventListener('change', async () => {
+                setHiddenName(provinceSelect, provinceNameInput);
+                resetDownstreamFromProvince();
+                setFeedback('');
+
+                try {
+                    await loadCitiesMunicipalities(provinceSelect.value);
+                } catch (error) {
+                    setFeedback(error.message, true);
+                    resetDownstreamFromProvince();
+                }
+            });
+
+            citySelect.addEventListener('change', async () => {
+                setHiddenName(citySelect, cityNameInput);
+                resetDownstreamFromCity();
+                setFeedback('');
+
+                try {
+                    await loadBarangays(citySelect.value);
+                } catch (error) {
+                    setFeedback(error.message, true);
+                    resetDownstreamFromCity();
+                }
+            });
+
+            barangaySelect.addEventListener('change', () => {
+                setHiddenName(barangaySelect, barangayNameInput);
+                setFeedback('');
+            });
+
+            try {
+                setFeedback('Loading location options...');
+                await loadRegions(oldRegionCode);
+
+                if (oldRegionCode && regionSelect.value) {
+                    await loadProvinces(oldRegionCode, oldProvinceCode);
+                }
+
+                if (oldProvinceCode && provinceSelect.value) {
+                    await loadCitiesMunicipalities(oldProvinceCode, oldCityCode);
+                }
+
+                if (oldCityCode && citySelect.value) {
+                    await loadBarangays(oldCityCode, oldBarangayCode);
+                }
+
+                setFeedback('');
+            } catch (error) {
+                setFeedback(error.message || 'Location options are temporarily unavailable.', true);
+                resetSelect(regionSelect, 'Unable to load regions');
+                resetDownstreamFromRegion();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializePsgcLocationSelector);
     </script>
     @endpush
 </x-public-layout>

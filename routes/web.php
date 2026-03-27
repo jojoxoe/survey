@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PsgcController;
+use App\Http\Controllers\PsgcLocationController;
 use App\Http\Controllers\ResponseController;
 use App\Http\Controllers\ResultsController;
 use App\Http\Controllers\SurveyController;
@@ -11,14 +11,21 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-// PSGC location API (cascading dropdowns)
-Route::get('/api/psgc/regions', [PsgcController::class, 'regions'])->name('psgc.regions');
-Route::get('/api/psgc/regions/{regionCode}/provinces', [PsgcController::class, 'provinces'])->name('psgc.provinces');
-Route::get('/api/psgc/provinces/{provinceCode}/cities', [PsgcController::class, 'cities'])->name('psgc.cities');
-Route::get('/api/psgc/cities/{cityCode}/barangays', [PsgcController::class, 'barangays'])->name('psgc.barangays');
-
 // Survey code lookup (from landing page)
 Route::post('/survey/lookup', [ResponseController::class, 'lookupCode'])->name('survey.lookup');
+
+Route::prefix('locations')->name('locations.')->group(function () {
+    Route::get('/regions', [PsgcLocationController::class, 'getRegions'])->name('regions');
+    Route::get('/regions/{region}/provinces', [PsgcLocationController::class, 'getProvinces'])
+        ->where('region', '[A-Za-z0-9-]+')
+        ->name('provinces');
+    Route::get('/provinces/{province}/cities-municipalities', [PsgcLocationController::class, 'getCitiesMunicipalities'])
+        ->where('province', '[A-Za-z0-9-]+')
+        ->name('cities-municipalities');
+    Route::get('/cities-municipalities/{cityMunicipality}/barangays', [PsgcLocationController::class, 'getBarangays'])
+        ->where('cityMunicipality', '[A-Za-z0-9-]+')
+        ->name('barangays');
+});
 
 // Public survey routes (no auth)
 Route::get('/s/{slug}', [ResponseController::class, 'showBySlug'])->name('survey.respond');

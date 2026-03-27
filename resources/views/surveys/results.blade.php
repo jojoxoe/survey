@@ -21,13 +21,34 @@
             <div class="card">
                 <div class="mb-4">
                     <h3 class="font-semibold text-gray-800">Respondent Details</h3>
-                    <p class="text-xs text-gray-400 mt-1">Name (or Anonymous), gender, and location of each response</p>
+                    <p class="text-xs text-gray-400 mt-1">Name, gender, and location of each response</p>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4" id="demographics-controls">
+                    <div class="flex-1">
+                        <label for="demographics-search" class="sr-only">Search respondents</label>
+                        <input
+                            id="demographics-search"
+                            type="text"
+                            placeholder="Search by name, gender, location, or submitted date"
+                            class="input-field w-full"
+                        >
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="demographics-per-page" class="text-xs text-gray-500">Rows</label>
+                        <select id="demographics-per-page" class="input-field py-2 pr-8 text-sm w-24">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-[28rem] overflow-y-auto rounded-lg border border-gray-100">
                     <table class="min-w-full text-sm">
-                        <thead>
-                            <tr class="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-400">
+                        <thead class="bg-gray-50 sticky top-0 z-10">
+                            <tr class="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
                                 <th class="px-3 py-2 font-semibold">Respondent</th>
                                 <th class="px-3 py-2 font-semibold">Gender</th>
                                 <th class="px-3 py-2 font-semibold">Location</th>
@@ -36,7 +57,10 @@
                         </thead>
                         <tbody>
                             @foreach($demographicsRows as $row)
-                                <tr class="border-b border-gray-100 last:border-b-0">
+                                <tr
+                                    class="border-b border-gray-100 last:border-b-0 demographics-row"
+                                    data-search="{{ strtolower($row['respondent'].' '.$row['gender'].' '.$row['location'].' '.$row['submitted_at']) }}"
+                                >
                                     <td class="px-3 py-2 text-gray-700">{{ $row['respondent'] }}</td>
                                     <td class="px-3 py-2 text-gray-700">{{ $row['gender'] }}</td>
                                     <td class="px-3 py-2 text-gray-600">{{ $row['location'] }}</td>
@@ -45,6 +69,15 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+
+                <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
+                    <p id="demographics-summary">Showing 0 of 0 respondents</p>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="demographics-prev" class="btn-secondary btn-sm">Previous</button>
+                        <span id="demographics-page">Page 1</span>
+                        <button type="button" id="demographics-next" class="btn-secondary btn-sm">Next</button>
+                    </div>
                 </div>
             </div>
 
@@ -119,6 +152,82 @@
             const primaryColor = '#3b82f6';
             const accentColor = '#fde047';
             const colors = ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe', '#fde047', '#fef08a', '#fef9c3'];
+
+            const rows = Array.from(document.querySelectorAll('.demographics-row'));
+            const searchInput = document.getElementById('demographics-search');
+            const perPageSelect = document.getElementById('demographics-per-page');
+            const previousButton = document.getElementById('demographics-prev');
+            const nextButton = document.getElementById('demographics-next');
+            const pageLabel = document.getElementById('demographics-page');
+            const summaryLabel = document.getElementById('demographics-summary');
+            let currentPage = 1;
+
+            function applyDemographicsPagination() {
+                if (!rows.length || !searchInput || !perPageSelect || !previousButton || !nextButton || !pageLabel || !summaryLabel) {
+                    return;
+                }
+
+                const query = searchInput.value.trim().toLowerCase();
+                const perPage = parseInt(perPageSelect.value, 10) || 25;
+                const filteredRows = rows.filter(function(row) {
+                    const searchValue = row.dataset.search || '';
+
+                    return query === '' || searchValue.includes(query);
+                });
+
+                const totalPages = Math.max(1, Math.ceil(filteredRows.length / perPage));
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
+                }
+
+                const start = (currentPage - 1) * perPage;
+                const end = start + perPage;
+
+                rows.forEach(function(row) {
+                    row.classList.add('hidden');
+                });
+
+                filteredRows.slice(start, end).forEach(function(row) {
+                    row.classList.remove('hidden');
+                });
+
+                summaryLabel.textContent = 'Showing ' + filteredRows.length + ' of ' + rows.length + ' respondents';
+                pageLabel.textContent = 'Page ' + currentPage + ' of ' + totalPages;
+                previousButton.disabled = currentPage === 1;
+                nextButton.disabled = currentPage === totalPages;
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    currentPage = 1;
+                    applyDemographicsPagination();
+                });
+            }
+
+            if (perPageSelect) {
+                perPageSelect.addEventListener('change', function() {
+                    currentPage = 1;
+                    applyDemographicsPagination();
+                });
+            }
+
+            if (previousButton) {
+                previousButton.addEventListener('click', function() {
+                    if (currentPage > 1) {
+                        currentPage -= 1;
+                        applyDemographicsPagination();
+                    }
+                });
+            }
+
+            if (nextButton) {
+                nextButton.addEventListener('click', function() {
+                    currentPage += 1;
+                    applyDemographicsPagination();
+                });
+            }
+
+            applyDemographicsPagination();
 
             analytics.forEach(function(data) {
                 const qId = data.question.id;

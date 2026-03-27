@@ -26,7 +26,7 @@ class ResultsController extends Controller
 
         $survey->load('questions.options', 'responses.answers');
 
-        $filename = 'survey-' . $survey->slug . '-responses.csv';
+        $filename = 'survey-'.$survey->slug.'-responses.csv';
 
         return response()->streamDownload(function () use ($survey) {
             $handle = fopen('php://output', 'w');
@@ -44,10 +44,10 @@ class ResultsController extends Controller
                     $index + 1,
                     $response->respondent_name ?? '',
                     $response->respondent_gender ?? '',
-                    $response->respondent_region ?? '',
-                    $response->respondent_province ?? '',
-                    $response->respondent_city ?? '',
-                    $response->respondent_barangay ?? '',
+                    $response->region_name ?? '',
+                    $response->province_name ?? '',
+                    $response->city_municipality_name ?? '',
+                    $response->barangay_name ?? '',
                     $response->completed_at?->format('Y-m-d H:i:s'),
                 ];
 
@@ -70,7 +70,7 @@ class ResultsController extends Controller
 
                         case 'ranking':
                             $ranked = $questionAnswers->sortBy('value')->map(function ($a) {
-                                return $a->value . '. ' . ($a->option?->label ?? '');
+                                return $a->value.'. '.($a->option?->label ?? '');
                             })->implode('; ');
                             $row[] = $ranked;
                             break;
@@ -138,7 +138,7 @@ class ResultsController extends Controller
                             'avg_rank' => $avgRank,
                         ];
                     }
-                    usort($rankings, fn($a, $b) => ($a['avg_rank'] ?? 999) <=> ($b['avg_rank'] ?? 999));
+                    usort($rankings, fn ($a, $b) => ($a['avg_rank'] ?? 999) <=> ($b['avg_rank'] ?? 999));
                     $data['rankings'] = $rankings;
                     break;
 
@@ -151,7 +151,7 @@ class ResultsController extends Controller
                     }
                     $data['average'] = $avg;
                     $data['chart'] = [
-                        'labels' => array_map(fn($i) => (string) $i, range(1, $maxRating)),
+                        'labels' => array_map(fn ($i) => (string) $i, range(1, $maxRating)),
                         'values' => array_values($distribution),
                     ];
                     break;
@@ -174,16 +174,20 @@ class ResultsController extends Controller
             ->values()
             ->map(function ($response) {
                 $locationParts = [
-                    $response->respondent_region,
-                    $response->respondent_province,
-                    $response->respondent_city,
-                    $response->respondent_barangay,
+                    $response->barangay_name,
+                    $response->city_municipality_name,
+                    $response->province_name,
+                    $response->region_name,
                 ];
+
+                $location = collect($locationParts)
+                    ->filter(fn ($part) => filled($part))
+                    ->implode(', ');
 
                 return [
                     'respondent' => filled($response->respondent_name) ? $response->respondent_name : 'Anonymous',
                     'gender' => $response->respondent_gender,
-                    'location' => implode(' / ', array_filter($locationParts, fn ($part) => filled($part))),
+                    'location' => $location !== '' ? $location : '-',
                     'submitted_at' => $response->completed_at?->format('Y-m-d H:i:s') ?? '-',
                 ];
             })

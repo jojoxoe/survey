@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -16,10 +16,14 @@ class Response extends Model
         'respondent_hash',
         'respondent_name',
         'respondent_gender',
-        'respondent_region',
-        'respondent_province',
-        'respondent_city',
-        'respondent_barangay',
+        'region_code',
+        'region_name',
+        'province_code',
+        'province_name',
+        'city_municipality_code',
+        'city_municipality_name',
+        'barangay_code',
+        'barangay_name',
         'completed_at',
     ];
 

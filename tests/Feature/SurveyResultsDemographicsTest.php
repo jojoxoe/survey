@@ -23,20 +23,20 @@ class SurveyResultsDemographicsTest extends TestCase
         Response::factory()->for($survey)->create([
             'respondent_name' => null,
             'respondent_gender' => 'Female',
-            'respondent_region' => 'Region I',
-            'respondent_province' => 'Ilocos Norte',
-            'respondent_city' => 'Laoag City',
-            'respondent_barangay' => 'Barangay 1',
+            'region_name' => 'Region I (Ilocos Region)',
+            'province_name' => 'Ilocos Norte',
+            'city_municipality_name' => 'Laoag City',
+            'barangay_name' => 'Barangay 1',
             'completed_at' => now()->subMinute(),
         ]);
 
         Response::factory()->for($survey)->create([
             'respondent_name' => 'Juan Dela Cruz',
             'respondent_gender' => 'Male',
-            'respondent_region' => 'Region III',
-            'respondent_province' => 'Pampanga',
-            'respondent_city' => 'San Fernando',
-            'respondent_barangay' => 'Barangay 2',
+            'region_name' => 'Region IV-A (CALABARZON)',
+            'province_name' => 'Batangas',
+            'city_municipality_name' => 'Padre Garcia',
+            'barangay_name' => 'Poblacion',
             'completed_at' => now(),
         ]);
 
@@ -50,8 +50,8 @@ class SurveyResultsDemographicsTest extends TestCase
         $response->assertSeeText('Juan Dela Cruz');
         $response->assertSeeText('Female');
         $response->assertSeeText('Male');
-        $response->assertSeeText('Region I / Ilocos Norte / Laoag City / Barangay 1');
-        $response->assertSeeText('Region III / Pampanga / San Fernando / Barangay 2');
+        $response->assertSeeText('Barangay 1, Laoag City, Ilocos Norte, Region I (Ilocos Region)');
+        $response->assertSeeText('Poblacion, Padre Garcia, Batangas, Region IV-A (CALABARZON)');
     }
 
     /**
